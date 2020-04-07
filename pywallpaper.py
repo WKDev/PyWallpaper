@@ -11,7 +11,6 @@ from PyQt5.QtWidgets import QApplication,QWidget, QAction, qApp, QHBoxLayout, \
 from PyQt5.QtCore import QThread, Qt, QSize
 from PyQt5.QtGui import QPixmap
 
-
 # https://512pixels.net/projects/default-mac-wallpapers-in-5k/
 
 class main:
@@ -22,12 +21,15 @@ class main:
         self.image_location = []
         self.wallpaper_path = ''
         self.mix = 0
+        self.config = []
 
+    #파일이 존재하는 위치에서 배경화면 파일 리스트 불러오기
     def get_wallpaper_label(self):
         os.path.abspath(os.getcwd())
         self.wallpaper_list = os.listdir('./wallpaper/Catalina')
 
-    def get_next_wallpaper(self):
+
+    def get_next_change_time(self):
         t = time.localtime()
         curr_min = t.tm_hour * 60 + t.tm_min
         while not curr_min % 18 == 0:
@@ -92,9 +94,19 @@ class main:
     def apply_wallpaper(self):
         self.wallpaper_path = os.getcwd() + r'\wallpaper.jpg'
         print('경로 :' + self.wallpaper_path)
-        hour, min = self.get_next_wallpaper()
+        hour, min = self.get_next_change_time()
         print('에서 배경화면 적용 완료. 다음 적용 시간은 {}:{}입니다.'.format(hour, min))
         ctypes.windll.user32.SystemParametersInfoW(0x14, 0, self.wallpaper_path, 0x3)  # SystemParametersInfoA
+
+    def import_setting(self):
+        with open('config.ini', 'r') as f:
+            self.config = f.readlines()
+
+    def export_setting(self):
+        with open('config.ini', 'w') as f:
+            for i in self.config:
+                f.write(i)
+
 
 class Gui(QWidget):
     def __init__(self):
@@ -291,7 +303,7 @@ class Worker(QThread):
     def run(self):
         while True:
             main_app.smooth_change()
-            next_hour, next_min = main_app.get_next_wallpaper()
+            next_hour, next_min = main_app.get_next_change_time()
             ev.setCurrTime()
             ev.setNextTime(next_hour, next_min)
             title1, title2, mix = main_app.get_wallpaper_info()
@@ -301,6 +313,7 @@ class Worker(QThread):
 if __name__ == '__main__':
     print('welcome to pyWallpaper.')
     main_app = main()
+    # main_app.import_setting()  #later versions
     main_app.get_wallpaper_label()
 
     # gui 부분
